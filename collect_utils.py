@@ -37,7 +37,7 @@ def get_columns(dataframe, primary_key: str):
     return columns
 
 #==========================================================================
-#create_table
+#edit_table
 #A function for creating tables from dataframes that need to be linked
 #expects a db connection, dataframe, table name, and keys and relations
 #then creates a table
@@ -59,14 +59,12 @@ def create_table(conn: sqlite3.Connection,
                         REFERENCES "{parent_table}"("id") 
                         ON DELETE CASCADE
                         """)
-    #Joining the list together then excuting statement to create tables
+    #Joining the list together then excuting statement to create table
+    #If the table does not yet exist
     table_str = ',\n'.join(column_names)
-    create_table = f"CREATE TABLE {table_name} (\n    {table_str}\n);"
-    conn.execute("PRAGMA foreign_keys = OFF;")
-    with conn:
-        conn.execute(f"DROP TABLE IF EXISTS {table_name};")
-        conn.execute(create_table)
-    conn.execute("PRAGMA foreign_keys = ON;")
+    create_table = f"CREATE TABLE IF NOT EXISTS {table_name} (\n    {table_str}\n);"
+    conn.execute(create_table)
+    
 
 #==========================================================================
 #extract_children
@@ -128,5 +126,7 @@ def call_api(api: str, params: dict, **kwargs):
         offset += return_amount
         params['offset'] = offset
         print(f'{offset} records collected')
+    if offset >= max_returns:
+        print('API Call ended due to max calls reached. If not all records have been pulled, increase max_returns')
     return return_list
     

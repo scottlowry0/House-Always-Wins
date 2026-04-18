@@ -27,7 +27,7 @@ config_file = 'config.toml'
 
 with open(config_file,'rb') as fh:
     config = tomllib.load(fh)    
-    api = config['api']
+    api = config['event_api']
     db_name = config['db_name']
     tag_slug = config['tag_slug']
     include_chat = config['include_chat']

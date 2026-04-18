@@ -1,4 +1,6 @@
-api = 'https://gamma-api.polymarket.com/events'
+#API endpoints
+event_api = 'https://gamma-api.polymarket.com/events'
+tag_api = 'https://gamma-api.polymarket.com/tags'
 
 #Names for DB
 db_name = 'markets_test.db'
@@ -12,11 +14,15 @@ tag_slug = 'iran'
 #Put another way, if this is set to true it will not work
 include_chat = 'false'
 
+#Drops tables from the database
+#IF SET TO TRUE THIS WILL DROP ALL TABLES IN THE DATABASE
+
+
 #names for output tables
 [table_names]
 event_table_name = 'events_iran_test'
 market_table_name = 'market_iran_test'
-tag_table_name = 'tag_iran_test'
+tag_table_name = 'tags'
 
 
 #Determines if the script calls inactive and closed markets
@@ -24,4 +30,6 @@ tag_table_name = 'tag_iran_test'
 [market_status]
 active = ['true', 'false']
 closed = ['true', 'false']
+
+
 
