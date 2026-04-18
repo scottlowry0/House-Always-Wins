@@ -37,67 +37,26 @@ with open(config_file,'rb') as fh:
     active = config['market_status']['active']
     closed = config['market_status']['closed']
 
-
+return_amount = 10
+offset = 0
 conn = sqlite3.connect(db_name)
 
-#offset should always start as 0
-#increment amount is the number of results that each call will return
-#max returns is the max number of events to return
-offset = 0
-return_amount = 5
-max_returns = 1500
-events_list = []
 
 #%%
 #==========================================================================
 #Calling API
 #==========================================================================
-
-#Loop for calling the api to collect the market data
-#Depending on the tags specificed, this can take a while
-print('Begining script')
-while offset <= max_returns:
    
-    params = {
-        'limit': return_amount,
-        'tag_slug': tag_slug,
-        'include_chat': include_chat,
-        'offset': offset,
-        'active': active,
-        'closed': closed
-    }
-    
-    try:
-        response = requests.get(api, params=params)
-        retry = 0
-    
-    except Exception as e:
-            print('Exception',e)
-            print(response.status_code)
-            print(response.text)
-            if retry < 3:
-                retry += 1
-                print('\nRetry',retry)
-            else:
-                print('\nMaximum retries exceeded')
-                sys.exit()
-                
-    
-    #Formatting a succesful call
-    row_list = response.json()
-    
-    #If this list is empty on a succesful call, we have reached the end
-    #Of markets that match our critera and break the loop
-    if not row_list:
-        print('Query complete, begining save to database')
-        break
-    
-    #Adding the data to the events list, then resuming the loop
-    for event in row_list:
-        events_list.append(event)
-    row_list = []
-    offset += return_amount
-    print(f'{offset} records collected')
+params = {
+    'limit': return_amount,
+    'tag_slug': tag_slug,
+    'include_chat': include_chat,
+    'offset': offset,
+    'active': active,
+    'closed': closed
+}
+
+events_list = call_api(api, params)
 
 #%%
 #==========================================================================
@@ -131,7 +90,7 @@ create_table(conn, market_df, market_table_name, 'id', 'event_id', event_table_n
 market_df.to_sql(market_table_name, conn, if_exists='append', index=False)
 
 #Creating tags table
-create_table(conn, tag_df, tag_table_name, 'id', 'event_id', event_table_name )
+create_table(conn, tag_df, tag_table_name, None, 'event_id', event_table_name )
 tag_df.to_sql(tag_table_name, conn, if_exists='append', index=False)
 
 print('Script Complete!')

@@ -10,6 +10,8 @@ A Script containing helper functions for the House-Always-Wins library
 #Imports and Config
 import pandas as pd
 import sqlite3
+import requests
+import sys
 
 #==========================================================================
 #get_columns
@@ -80,3 +82,51 @@ def extract_children(parent_list: list, child_key: str):
         for event in parent_list
         for child in event.get(child_key, [])
     ]
+#==========================================================================
+#call_api
+#A function for calling the polymarket api
+#Required Arguements: API endpoint and a dict containing parameters
+#Optional Arguements: the amount of returns per call (polymarket max at 500 per call)
+#to edit specific parameters, use config.toml. for more information on
+#what each api parameter does, see the readme
+#==========================================================================
+def call_api(api: str, params: dict, **kwargs):
+    offset = params['offset']
+    max_returns = kwargs.get('max_returns', 5000)
+    return_amount = params['limit']
+    return_list = []
+    while offset <= max_returns:
+        try:
+            response = requests.get(api, params=params)
+            retry = 0
+        
+        except Exception as e:
+                print('Exception',e)
+                print(response.status_code)
+                print(response.text)
+                if retry < 3:
+                    retry += 1
+                    print('\nRetry',retry)
+                else:
+                    print('\nMaximum retries exceeded')
+                    sys.exit()
+                    
+        
+        #Formatting a succesful call
+        row_list = response.json()
+        
+        #If this list is empty on a succesful call, we have reached the end
+        #Of markets that match our critera and break the loop
+        if not row_list:
+            print('Query complete, begining save to database')
+            break
+        
+        #Adding the data to the return list, then resuming the loop
+        for result in row_list:
+            return_list.append(result)
+        row_list = []
+        offset += return_amount
+        params['offset'] = offset
+        print(f'{offset} records collected')
+    return return_list
+    
