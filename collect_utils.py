@@ -32,8 +32,8 @@ def get_columns(dataframe, primary_key: str):
             # Handles strings ('object'), datetimes, and mixed types
             sql_type = 'TEXT'
         columns.append(f'"{col}" {sql_type}')
-        
     return columns
+
 #==========================================================================
 #create_table
 #A function for creating tables from dataframes that need to be linked
@@ -43,9 +43,9 @@ def get_columns(dataframe, primary_key: str):
 def create_table(conn: sqlite3.Connection, 
                  dataframe: pd.DataFrame, 
                  table_name: str, 
-                 primary_key: str, 
+                 primary_key: str|None = None, 
                  foreign_key: str|None = None, 
-                 parent_table: str|None =None
+                 parent_table: str|None = None
                  ):
     #Getting column names and data types
     column_names = get_columns(dataframe, primary_key)
@@ -65,7 +65,6 @@ def create_table(conn: sqlite3.Connection,
         conn.execute(f"DROP TABLE IF EXISTS {table_name};")
         conn.execute(create_table)
     conn.execute("PRAGMA foreign_keys = ON;")
-
 
 #==========================================================================
 #extract_children

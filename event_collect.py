@@ -107,7 +107,7 @@ while offset <= max_returns:
 #Separating out the markets for their own table
 market_list = extract_children(events_list, 'markets')
 market_df = pd.DataFrame(market_list)
-market_df = market_df.drop(columns=['outcomes', 'outcomePrices', 'clobTokenIds', 'umaResolutionStatuses', 'clobRewards'])
+market_df = market_df.drop(columns=['outcomes', 'outcomePrices', 'clobTokenIds', 'umaResolutionStatuses', 'clobRewards', 'groupItemRange', 'feeSchedule'])
 
 #Separating out tags for their own table
 tag_list = extract_children(events_list, 'tags')
@@ -124,11 +124,14 @@ event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets'])
 
 #Creating the events table
 create_table(conn, event_df, event_table_name, 'id' )
+event_df.to_sql(event_table_name, conn, if_exists='append', index=False)
 
 #Creating the markets table
 create_table(conn, market_df, market_table_name, 'id', 'event_id', event_table_name )
+market_df.to_sql(market_table_name, conn, if_exists='append', index=False)
 
 #Creating tags table
 create_table(conn, tag_df, tag_table_name, 'id', 'event_id', event_table_name )
+tag_df.to_sql(tag_table_name, conn, if_exists='append', index=False)
 
 print('Script Complete!')
