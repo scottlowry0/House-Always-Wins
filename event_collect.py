@@ -7,26 +7,37 @@ Created on Sun Apr 12 13:09:01 2026
 A first draft script for using the polymarket API to build a table of events
 
 *********************************************************
-THIS SCRIPT WILL DROP TABLES FROM THE DATABSE BEING USED
+THIS SCRIPT WILL DROP TABLES FROM THE DATABASE BEING USED
 *********************************************************
 """
 
 #Imports
+import tomllib
 import pandas as pd
 import requests
 import sqlite3
 import sys
+from collect_utils import *
+import os
 
 #==========================================================================
 #CONFIG
 #==========================================================================
-api = 'https://gamma-api.polymarket.com/events'
+config_file = 'config.toml'
 
-#Names for DB, and tables
-db_name = 'markets_test.db'
-event_table_name = 'events_iran_test'
-market_table_name = 'market_iran_test'
-tag_table_name = 'tag_iran_test'
+with open(config_file,'rb') as fh:
+    config = tomllib.load(fh)    
+    api = config['api']
+    db_name = config['db_name']
+    tag_slug = config['tag_slug']
+    include_chat = config['include_chat']
+    event_table_name = config['table_names']['event_table_name']
+    market_table_name = config['table_names']['market_table_name']
+    tag_table_name = config['table_names']['tag_table_name']
+    active = config['market_status']['active']
+    closed = config['market_status']['closed']
+
+
 conn = sqlite3.connect(db_name)
 
 #offset should always start as 0
@@ -35,18 +46,6 @@ conn = sqlite3.connect(db_name)
 offset = 0
 return_amount = 5
 max_returns = 1500
-
-#only calls markets with the selected tag slug. Tag slugs are a text tag
-#using number tag ids will fail
-tag_slug = 'iran'
-
-#Determines if the script calls inactive and closed markets
-#true and false will call both
-active = ['true', 'false']
-closed = ['true', 'false']
-
-#other parameters
-include_chat = 'false'
 events_list = []
 
 #%%
@@ -106,45 +105,30 @@ while offset <= max_returns:
 #==========================================================================
 
 #Separating out the markets for their own table
-market_list = [
-    {**market, 'event_id': event.get('id')} 
-    for event in events_list 
-    for market in event.get('markets', [])
-]
-colnames = market_list[0]
-datarows = market_list[1:]
-market_df = pd.DataFrame(columns=colnames, data=datarows)
-market_df = market_df.set_index(['id', 'event_id'])
+market_list = extract_children(events_list, 'markets')
+market_df = pd.DataFrame(market_list)
 market_df = market_df.drop(columns=['outcomes', 'outcomePrices', 'clobTokenIds', 'umaResolutionStatuses', 'clobRewards'])
 
 #Separating out tags for their own table
-tag_list = [
-    {**tag, 'event_id': event.get('id')} 
-    for tag in events_list
-    for tag in event.get('tags', [])
-]
-colnames = tag_list[0]
-datarows = tag_list[1:]
-tag_df = pd.DataFrame(columns=colnames, data=datarows)
-tag_df = tag_df.set_index(['id', 'event_id'])
+tag_list = extract_children(events_list, 'tags')
+tag_df = pd.DataFrame(tag_list)
 
 #Formatting the event data
-colnames = events_list[0]
-datarows = events_list[1:]
-event_df = pd.DataFrame(columns=colnames, data=datarows)
+event_df = pd.DataFrame(events_list)
 event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets'])
 
 #%%
 #==========================================================================
 #Adding the dataframes to the database
 #==========================================================================
-with conn:
-    conn.executescript(f"""
-    DROP TABLE IF EXISTS {market_table_name};
-    DROP TABLE IF EXISTS {tag_table_name};
-    DROP TABLE IF EXISTS {event_table_name};
-""")
-event_df.to_sql(event_table_name , conn, index=False)
-tag_df.to_sql(tag_table_name, conn, index=False)
-market_df.to_sql(market_table_name, conn, index=False)
 
+#Creating the events table
+create_table(conn, event_df, event_table_name, 'id' )
+
+#Creating the markets table
+create_table(conn, market_df, market_table_name, 'id', 'event_id', event_table_name )
+
+#Creating tags table
+create_table(conn, tag_df, tag_table_name, 'id', 'event_id', event_table_name )
+
+print('Script Complete!')
