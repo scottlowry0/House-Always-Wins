@@ -15,16 +15,13 @@ import sys
 
 #==========================================================================
 #get_columns
-#A function for getting the column names and data types
+#A function for getting the column names and data types for SQL strings
 #expects a dataframe, then returns a list with col name
 #and data types
 #==========================================================================
-def get_columns(dataframe, primary_key: str):
+def get_columns(dataframe):
     columns = []
     for col in dataframe:
-        if col == primary_key:
-            columns.append(f'"{col}" TEXT PRIMARY KEY')
-            continue
         dtype = str(dataframe[col].dtype).lower()
         if 'int' in dtype or 'bool' in dtype:
             sql_type = 'INTEGER'
@@ -45,20 +42,26 @@ def get_columns(dataframe, primary_key: str):
 def create_table(conn: sqlite3.Connection, 
                  dataframe: pd.DataFrame, 
                  table_name: str, 
-                 primary_key: str|None = None, 
-                 foreign_key: str|None = None, 
-                 parent_table: str|None = None
-                 ):
+                 primary_keys: list|None = None, 
+                 foreign_keys: list[tuple[str, str]]|None = None, 
+    ):
+    
     #Getting column names and data types
-    column_names = get_columns(dataframe, primary_key)
+    column_names = get_columns(dataframe)
+    
+    #Adds primary keys if provided
+    if primary_keys:
+        pk_str = ', '.join([f'"{pk}"' for pk in primary_keys])
+        column_names.append(f'PRIMARY KEY ({pk_str})')
     
     #Adds a foreign key and parent table if provided
-    if foreign_key and parent_table:
-        column_names.append(f"""
-                        FOREIGN KEY ("{foreign_key}") 
-                        REFERENCES "{parent_table}"("id") 
-                        ON DELETE CASCADE
-                        """)
+    if foreign_keys:
+        for foreign_key, parent_table in foreign_keys:
+            column_names.append(f"""
+                            FOREIGN KEY ("{foreign_key}") 
+                            REFERENCES "{parent_table}"("id") 
+                            ON DELETE CASCADE
+                            """)
     #Joining the list together then excuting statement to create table
     #If the table does not yet exist
     table_str = ',\n'.join(column_names)
@@ -68,7 +71,7 @@ def create_table(conn: sqlite3.Connection,
 
 #==========================================================================
 #extract_children
-#An unfortunately named function for extracting data for child tables
+#A function for extracting data for child tables
 #Parent list is the list containing one or more dictionaries that need extracting
 #Child key is the dictionary key for the list of dictionaries you are extracting
 #i.e if you want the markets give it markets as the arguement
@@ -130,3 +133,64 @@ def call_api(api: str, params: dict, **kwargs):
         print('API Call ended due to max calls reached. If not all records have been pulled, increase max_returns')
     return return_list
     
+#==========================================================================
+#upsert_data
+#A function for adding or updating data within an existing table
+#Required Arguements: API endpoint and a dict containing parameters
+#Optional Arguements: the amount of returns per call (polymarket max at 500 per call)
+#to edit specific parameters, use config.toml. for more information on
+#what each api parameter does, see the readme
+#==========================================================================
+def upsert_data(conn: sqlite3.Connection, 
+                dataframe: pd.DataFrame, 
+                table_name: str, 
+                primary_keys: list | None = None
+                ):
+    
+        #Removing columns in the dataframe not currently in the table
+        cursor = conn.execute(f"PRAGMA table_info({table_name})")
+        db_cols = [row[1] for row in cursor.fetchall()]
+        valid_cols = [col for col in dataframe.columns if col in db_cols]
+        dataframe = dataframe[valid_cols]
+    
+    
+        if primary_keys:
+           temp_table = f"{table_name}_temp"
+           dataframe.to_sql(temp_table, conn, if_exists='replace', index=False)
+        
+           #Finds non-primary key columns for updating
+           data_cols = [col for col in dataframe.columns if col not in primary_keys]
+        
+           #Format the list into string for the ON CONFLICT line
+           pk_sql_str = ', '.join([f'"{pk}"' for pk in primary_keys])
+           
+           #If there are non primary key columns, sort them out for updating
+           if data_cols:
+                update_cols = [f'"{col}" = excluded."{col}"' for col in data_cols]
+                update_str = ',\n        '.join(update_cols)
+                
+                skip_rules = [f'{table_name}."{col}" IS NOT excluded."{col}"' for col in data_cols]
+                where_str = '\n        OR '.join(skip_rules)
+                
+                upsert_sql = f"""
+                    INSERT INTO {table_name} 
+                    SELECT * FROM {temp_table}
+                    WHERE 1
+                    ON CONFLICT({pk_sql_str}) DO UPDATE SET 
+                    {update_str}
+                    WHERE {where_str};
+                """
+           #If there are no non-primary key columns
+           else:
+                upsert_sql = f"""
+                    INSERT INTO {table_name} 
+                    SELECT * FROM {temp_table}
+                    WHERE 1
+                    ON CONFLICT({pk_sql_str}) DO NOTHING;
+                """
+           with conn:
+                conn.execute(upsert_sql)
+                conn.execute(f"DROP TABLE {temp_table};")
+        #If there are no primary key columns in the table    
+        else:
+            dataframe.to_sql(table_name, conn, if_exists='append', index=False)

@@ -23,6 +23,7 @@ include_chat = 'false'
 event_table_name = 'events_iran_test'
 market_table_name = 'market_iran_test'
 tag_table_name = 'tags'
+tag_bridge_table_name = 'tag_event_bridge'
 
 
 #Determines if the script calls inactive and closed markets
