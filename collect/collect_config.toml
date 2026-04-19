@@ -1,0 +1,38 @@
+#API endpoints
+event_api = 'https://gamma-api.polymarket.com/events'
+tag_api = 'https://gamma-api.polymarket.com/tags'
+transaction_api = 'https://data-api.polymarket.com/trades'
+
+#Names for DB
+db_name = 'markets_test.db'
+
+#only calls markets with the selected tag slug. Tag slugs are a text tag
+#using number tag ids will fail
+tag_slug = 'iran'
+
+#Determines if the calls return comments
+#This script does not currently support comments
+#Put another way, if this is set to true it will not work
+include_chat = 'false'
+
+#Drops tables from the database
+#IF SET TO TRUE THIS WILL DROP ALL TABLES IN THE DATABASE
+
+
+#names for output tables
+[table_names]
+event_table_name = 'events_iran_test'
+market_table_name = 'market_iran_test'
+tag_table_name = 'tags'
+tag_bridge_table_name = 'tag_event_bridge'
+transaction_table_name = 'transaction_iran_test'
+
+
+#Determines if the script calls inactive and closed markets
+#true and false will call both
+[market_status]
+active = ['true', 'false']
+closed = ['true', 'false']
+
+
+
