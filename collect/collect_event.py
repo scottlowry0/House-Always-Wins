@@ -75,7 +75,7 @@ tag_df = tag_df[['id', 'event_id']]
 
 #Formatting the event data
 event_df = pd.DataFrame(events_list)
-event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets'], errors='ignore')
+event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets', 'eventCreators'], errors='ignore')
 
 #%%
 #==========================================================================

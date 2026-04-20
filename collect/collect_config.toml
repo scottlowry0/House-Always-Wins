@@ -8,7 +8,7 @@ db_name = 'markets_test.db'
 
 #only calls markets with the selected tag slug. Tag slugs are a text tag
 #using number tag ids will fail
-tag_slug = 'iran'
+tag_slug = 'pop-culture'
 
 #Determines if the calls return comments
 #This script does not currently support comments

@@ -30,7 +30,7 @@ with open(config_file,'rb') as fh:
     db_name = config['db_name']
     tag_table_name = config['table_names']['tag_table_name']
 
-return_amount = 10
+return_amount = 100
 offset = 0
 conn = sqlite3.connect(db_name)
 
@@ -52,5 +52,5 @@ tag_list = call_api(api, params, max_returns=10000)
 #==========================================================================
 tag_df = pd.DataFrame(tag_list)
 #Creating tags table
-create_table(conn, tag_df, tag_table_name, 'id')
+create_table(conn, tag_df, tag_table_name, ['id'])
 tag_df.to_sql(tag_table_name, conn, if_exists='append', index=False)

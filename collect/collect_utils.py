@@ -96,6 +96,7 @@ def call_api(api: str, params: dict, **kwargs):
     max_returns = kwargs.get('max_returns', 5000)
     return_amount = params['limit']
     return_list = []
+    total_records = 0
     while offset <= max_returns:
         try:
             response = requests.get(api, params=params)
@@ -125,10 +126,13 @@ def call_api(api: str, params: dict, **kwargs):
         #Adding the data to the return list, then resuming the loop
         for result in row_list:
             return_list.append(result)
+        print(f'{len(row_list)} records collected')
+        total_records += len(row_list) 
+        print(f'total records: {total_records}')
         row_list = []
         offset += return_amount
         params['offset'] = offset
-        print(f'{offset} records collected')
+        
     if offset >= max_returns:
         print('API Call ended due to max calls reached. If not all records have been pulled, increase max_returns')
     return return_list
@@ -157,12 +161,14 @@ def upsert_data(conn: sqlite3.Connection,
         if primary_keys:
            temp_table = f"{table_name}_temp"
            dataframe.to_sql(temp_table, conn, if_exists='replace', index=False)
-        
+           
            #Finds non-primary key columns for updating
            data_cols = [col for col in dataframe.columns if col not in primary_keys]
-        
+           
            #Format the list into string for the ON CONFLICT line
            pk_sql_str = ', '.join([f'"{pk}"' for pk in primary_keys])
+           
+           col_names = ', '.join([f'"{col}"' for col in dataframe.columns])
            
            #If there are non primary key columns, sort them out for updating
            if data_cols:
@@ -173,8 +179,8 @@ def upsert_data(conn: sqlite3.Connection,
                 where_str = '\n        OR '.join(skip_rules)
                 
                 upsert_sql = f"""
-                    INSERT INTO {table_name} 
-                    SELECT * FROM {temp_table}
+                    INSERT INTO {table_name} ({col_names}) 
+                    SELECT {col_names} FROM {temp_table}
                     WHERE 1
                     ON CONFLICT({pk_sql_str}) DO UPDATE SET 
                     {update_str}
@@ -183,8 +189,8 @@ def upsert_data(conn: sqlite3.Connection,
            #If there are no non-primary key columns
            else:
                 upsert_sql = f"""
-                    INSERT INTO {table_name} 
-                    SELECT * FROM {temp_table}
+                    INSERT INTO {table_name} ({col_names}) 
+                    SELECT {col_names} FROM {temp_table}
                     WHERE 1
                     ON CONFLICT({pk_sql_str}) DO NOTHING;
                 """

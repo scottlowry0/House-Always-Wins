@@ -37,7 +37,7 @@ with open(config_file,'rb') as fh:
 return_amount = 100
 offset = 0
 conn = sqlite3.connect(db_name)
-tag_slugs=['iran']
+tag_slugs=['pop-culture']
 
 #==========================================================================
 #Calling API
@@ -56,7 +56,7 @@ params = {
     'offset': offset,
 }
 
-transaction_list = call_api(api, params, max_returns=1000)
+transaction_list = call_api(api, params, max_returns=100000)
 
 #%%
 #==========================================================================
