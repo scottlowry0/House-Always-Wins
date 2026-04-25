@@ -44,19 +44,20 @@ tag_slugs=['pop-culture']
 #==========================================================================
 
 #Building list of events to get
-event_id_list = get_event_ids_by_tags(conn, 
-                                      tag_slugs, 
-                                      event_table_name,
-                                      tag_bridge_table_name,
-                                      tag_table_name)
-
+# #event_id_list = get_event_ids_by_tags(conn, 
+#                                       tag_slugs, 
+#                                       event_table_name,
+#                                       tag_bridge_table_name,
+#                                       tag_table_name)
+event_id_list = ['21320']
+    
 params = {
     'limit': return_amount,
     'eventId': event_id_list,
     'offset': offset,
 }
 
-transaction_list = call_api(api, params, max_returns=100000)
+transaction_list = call_api(api, params, max_returns=3000)
 
 #%%
 #==========================================================================

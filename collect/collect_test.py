@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Apr 12 13:09:01 2026
+Created on Tue Apr 21 07:15:51 2026
 
 @author: Scott Lowry
-
-A first draft script for using the polymarket API to build a table of events
-
 """
 
 #Imports
@@ -66,7 +63,9 @@ market_list = extract_children(events_list, 'markets')
 market_df = pd.DataFrame(market_list)
 market_df = market_df.drop(columns=['outcomes', 'outcomePrices', 'clobTokenIds', 'umaResolutionStatuses', 'clobRewards', 'groupItemRange', 'feeSchedule'], errors='ignore')
 
+# --- NEW: Report entries and volume stats ---
 if 'volume' in market_df.columns:
+    # Ensure volume is numeric so sum() and mean() work properly
     market_df['volume'] = pd.to_numeric(market_df['volume'], errors='coerce')
     
     print(f"Total Market Entries: {len(market_df)}")
@@ -75,11 +74,11 @@ if 'volume' in market_df.columns:
 else:
     print(f"Total Market Entries: {len(market_df)}")
     print("Warning: 'volume' column not found in market data.")
+# --------------------------------------------
 
 #Separating out tags for their own table
 tag_list = extract_children(events_list, 'tags')
 tag_df = pd.DataFrame(tag_list)
-
 #All of the tag data is stored in the parent tags table
 #Dropping everything else since the bridge just needs the relations
 tag_df = tag_df[['id', 'event_id']]
@@ -87,36 +86,3 @@ tag_df = tag_df[['id', 'event_id']]
 #Formatting the event data
 event_df = pd.DataFrame(events_list)
 event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets', 'eventCreators'], errors='ignore')
-
-#%%
-#==========================================================================
-#Adding the dataframes to the database
-#==========================================================================
-
-#Creating the events table
-create_table(conn, event_df, event_table_name, ['id'] )
-
-upsert_data(conn, event_df, event_table_name, ['id'])
-
-#Creating the markets table
-create_table(
-             conn, 
-             market_df, 
-             market_table_name, 
-             ['id'], 
-             [('event_id', event_table_name )]
-             )
-
-upsert_data(conn, market_df, market_table_name, ['id'])
-
-#Creating tags-events bridge table table
-create_table(conn, 
-             tag_df, 
-             tag_bridge_table_name,
-             primary_keys=['event_id', 'id'], 
-             foreign_keys=[('event_id', event_table_name),
-              ('id', tag_table_name)] )
-
-upsert_data(conn, tag_df, tag_bridge_table_name, primary_keys=['event_id', 'id'])
-
-print('Script Complete')

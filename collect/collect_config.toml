@@ -2,13 +2,15 @@
 event_api = 'https://gamma-api.polymarket.com/events'
 tag_api = 'https://gamma-api.polymarket.com/tags'
 transaction_api = 'https://data-api.polymarket.com/trades'
+holders_api = 'https://data-api.polymarket.com/holders'
+activity_api = 'https://data-api.polymarket.com/activity'
 
 #Names for DB
 db_name = 'markets_test.db'
 
 #only calls markets with the selected tag slug. Tag slugs are a text tag
 #using number tag ids will fail
-tag_slug = 'pop-culture'
+tag_slug = 'derivatives'
 
 #Determines if the calls return comments
 #This script does not currently support comments
