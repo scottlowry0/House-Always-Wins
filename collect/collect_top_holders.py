@@ -8,11 +8,10 @@ Created on Fri Apr 24 16:05:51 2026
 #Imports
 import tomllib
 import pandas as pd
-import requests
-import sqlite3
-import sys
 from collect_utils import *
-import os
+from plot_utils import *
+import sys
+
 
 #==========================================================================
 #CONFIG
@@ -21,29 +20,57 @@ config_file = 'collect_config.toml'
 
 with open(config_file,'rb') as fh:
     config = tomllib.load(fh)    
-    holders_api = config['holders_api']
     activity_api = config['activity_api']
-    db_name = config['db_name']
-    event_table_name = config['table_names']['event_table_name']
-    market_table_name = config['table_names']['market_table_name']
-    tag_table_name = config['table_names']['tag_table_name']
-    tag_bridge_table_name = config['table_names']['tag_bridge_table_name']
-    transaction_table_name = config['table_names']['transaction_table_name']
-
+    
 return_amount = 100
 offset = 0
-conn = sqlite3.connect(db_name)
-tag_slugs = ['derivatives']
+condition_id = '0xc1588218a290e61ef35545553b157f76702cc3c61f7f1d309a9c68a49cbc29fd'
+user = '0x9a3fa403a6666eef75f92f181fcf13f9c051914a'
 
 #==========================================================================
-#CALLING TOP HOLDERS API
+#CALLING API
 #==========================================================================
     
-event_ids = get_event_ids_by_tags(conn, tag_slugs, event_table_name, tag_bridge_table_name, tag_table_name)
-
-for event in event_ids:
-    params = {
-        'limit' = return_amount,
-        'eventId' = event
-        'offset' = offset
+params = {
+        'user': user,
+        'market': condition_id,
+        'offset': 0,
+        'limit': 100,
         }
+
+user_data = call_api(activity_api, params, max_returns=3000)
+if user_data == False:
+    sys.exit('No data collected')
+    
+#==========================================================================
+#Formatting Data
+#==========================================================================
+#%%
+market_1 = pd.DataFrame(user_data)
+
+#Converting from Unix time and sorting data to chronological order
+market_1['timestamp'] = pd.to_datetime(market_1['timestamp'], unit='s')
+market_1 = market_1.sort_values('timestamp').reset_index(drop=True)
+
+#Making sells negative volume
+market_1.loc[market_1['side']== 'SELL', 'size'] *= -1
+
+#Separating out Yes and No positions
+market_yes = market_1.loc[market_1['outcome']=='Yes'].copy()
+market_no = market_1.loc[market_1['outcome']=='No'].copy()
+
+#Finding cumulative volume sums for plotting
+market_yes['total_position'] = market_yes['size'].cumsum()
+market_no['total_position'] = market_no['size'].cumsum()
+
+#Finding dollar amount spent or gained per transaction
+market_yes['transaction_cost'] = (market_yes['size'] *-1) * market_yes['price']
+market_yes['total_earnings'] = market_yes['transaction_cost'].cumsum()
+market_no['transaction_cost'] = (market_no['size'] *-1) * market_no['price']
+market_no['total_earnings'] = market_no['transaction_cost'].cumsum()
+#==========================================================================
+#Plotting Data
+#==========================================================================
+#%%
+plot_over_time(market_no, 'timestamp', 'total_position', 'Date', 'Volume')
+plot_over_time(market_no, 'timestamp', 'total_earnings', 'Date', 'Total Earnings')

@@ -226,3 +226,31 @@ def get_event_ids_by_tags(conn: sqlite3.Connection,
     #Running the query, then returning the list
     df = pd.read_sql(query, conn, params=tuple(tag_slugs))   
     return df['id'].dropna().tolist()
+
+#==========================================================================
+#create_tag_view
+#A function for getting all conditionIDs from the markets table by a specific tag
+#Required Arguements: The plain text tag slug list (i.e ['politics', 'sports'])
+#========================================================================== 
+def create_tag_view(conn: sqlite3.Connection,
+                    view_name: str,
+                    target_tag: str,
+                    market_table_name: str,
+                    tag_bridge_table_name: str,
+                    tag_table_name: str,):
+    conn.execute(f"""
+        CREATE VIEW IF NOT EXISTS {view_name} AS
+        SELECT 
+            m.id, 
+            m.question, 
+            m.conditionId, 
+            m.slug, 
+            m.description, 
+            m.volume
+        FROM {market_table_name} m
+        JOIN {tag_bridge_table_name} et ON m.event_id = et.event_id
+        JOIN {tag_table_name} t ON et.id = t.id
+        WHERE t.slug = '{target_tag}'
+    """)
+    conn.commit()
+           

@@ -119,4 +119,7 @@ create_table(conn,
 
 upsert_data(conn, tag_df, tag_bridge_table_name, primary_keys=['event_id', 'id'])
 
+#Creating a view of all markets with the added tag
+create_tag_view(conn, tag_slug, tag_slug, market_table_name, tag_bridge_table_name, tag_table_name)
+
 print('Script Complete')
