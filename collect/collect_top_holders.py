@@ -24,8 +24,8 @@ with open(config_file,'rb') as fh:
     
 return_amount = 100
 offset = 0
-condition_id = '0xc1588218a290e61ef35545553b157f76702cc3c61f7f1d309a9c68a49cbc29fd'
-user = '0x9a3fa403a6666eef75f92f181fcf13f9c051914a'
+condition_id = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
+user = '0xb03b826a4fc9893b35d3ddf4f11be824525b6ca1'
 
 #==========================================================================
 #CALLING API
@@ -39,7 +39,7 @@ params = {
         }
 
 user_data = call_api(activity_api, params, max_returns=3000)
-if user_data == False:
+if not user_data:
     sys.exit('No data collected')
     
 #==========================================================================
@@ -72,5 +72,5 @@ market_no['total_earnings'] = market_no['transaction_cost'].cumsum()
 #Plotting Data
 #==========================================================================
 #%%
-plot_over_time(market_no, 'timestamp', 'total_position', 'Date', 'Volume')
-plot_over_time(market_no, 'timestamp', 'total_earnings', 'Date', 'Total Earnings')
+plot_over_time(market_yes, 'timestamp', 'total_position', 'Date', 'Volume')
+plot_over_time(market_yes, 'timestamp', 'total_earnings', 'Date', 'Total Earnings')

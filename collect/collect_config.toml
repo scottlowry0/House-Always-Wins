@@ -4,6 +4,7 @@ tag_api = 'https://gamma-api.polymarket.com/tags'
 transaction_api = 'https://data-api.polymarket.com/trades'
 holders_api = 'https://data-api.polymarket.com/holders'
 activity_api = 'https://data-api.polymarket.com/activity'
+positions_api = 'https://data-api.polymarket.com/v1/market-positions'
 
 #Names for DB
 db_name = 'markets_test.db'

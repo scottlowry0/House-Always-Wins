@@ -254,3 +254,20 @@ def create_tag_view(conn: sqlite3.Connection,
     """)
     conn.commit()
            
+      
+#==========================================================================
+#merge_alternating_dict
+#A function for merging dictionaries
+#good for where the api returns lists by token 
+#(i.e a yes token list and a no token list) 
+#==========================================================================     
+def merge_alternating_dicts(dict_list, num_groups=2):
+    # Create a list holding empty dictionaries for the number of groups you want
+    merged_results = [{} for _ in range(num_groups)]
+    
+    # Loop through the list and update the corresponding dictionary
+    for i, d in enumerate(dict_list):
+        # i % 2 will alternate between 0 and 1, routing the dict to the right group
+        merged_results[i % num_groups].update(d)
+        
+    return merged_results
