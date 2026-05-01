@@ -7,7 +7,6 @@ Created on Sat Apr 18 17:28:25 2026
 A Script for creating a table of all of the tags on polymarket
 
 As of Apr 2026 there are about 6,000 tags on polymarket
-Expect this script to take a while
 """
 
 #Imports
@@ -22,23 +21,28 @@ import os
 #==========================================================================
 #CONFIG
 #==========================================================================
-config_file = 'collect_config.toml'
+#%%
+#Getting file path
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(script_dir)
+config_file = os.path.join(repo_root, 'config.toml')
 
+#Reading config
 with open(config_file,'rb') as fh:
     config = tomllib.load(fh)
     api = config['tag_api']
     db_name = config['db_name']
     tag_table_name = config['table_names']['tag_table_name']
+db_path = os.path.join(repo_root, db_name)
 
 return_amount = 100
 offset = 0
-conn = sqlite3.connect(db_name)
+conn = sqlite3.connect(db_path)
 
-#%%
 #==========================================================================
 #Calling API
 #==========================================================================
-
+#%%
 params = {
     'limit': return_amount,
     'offset': offset,

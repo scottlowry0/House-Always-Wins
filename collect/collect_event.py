@@ -20,7 +20,9 @@ import os
 #==========================================================================
 #CONFIG
 #==========================================================================
-config_file = 'collect_config.toml'
+script_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.dirname(script_dir)
+config_file = os.path.join(repo_root, 'config.toml')
 
 with open(config_file,'rb') as fh:
     config = tomllib.load(fh)    
@@ -35,49 +37,41 @@ with open(config_file,'rb') as fh:
     active = config['market_status']['active']
     closed = config['market_status']['closed']
 
+db_path = os.path.join(repo_root, db_name)
 return_amount = 100
 offset = 0
-conn = sqlite3.connect(db_name)
+conn = sqlite3.connect(db_path)
 
 
 #%%
 #==========================================================================
 #Calling API
 #==========================================================================
-   
-params = {
-    'limit': return_amount,
-    'tag_slug': tag_slug,
-    'include_chat': include_chat,
-    'offset': offset,
-    #'active': active,
-    #'closed': closed
-}
-
-events_list = call_api(api, params)
-
+event_list = []
+for tag in tag_slug:   
+    params = {
+        'limit': return_amount,
+        'tag_slug': tag,
+        'include_chat': include_chat,
+        'offset': offset,
+        #'active': active,
+        #'closed': closed
+    }
+    
+    call_list = call_api(api, params)
+    event_list.extend(call_list)
 #%%
 #==========================================================================
 #Formatting data
 #==========================================================================
 
 #Separating out the markets for their own table
-market_list = extract_children(events_list, 'markets')
+market_list = extract_children(event_list, 'markets')
 market_df = pd.DataFrame(market_list)
 market_df = market_df.drop(columns=['outcomes', 'outcomePrices', 'clobTokenIds', 'umaResolutionStatuses', 'clobRewards', 'groupItemRange', 'feeSchedule'], errors='ignore')
 
-if 'volume' in market_df.columns:
-    market_df['volume'] = pd.to_numeric(market_df['volume'], errors='coerce')
-    
-    print(f"Total Market Entries: {len(market_df)}")
-    print(f"Sum of Market Volume: {market_df['volume'].sum():.2f}")
-    print(f"Mean Market Volume: {market_df['volume'].mean():.2f}")
-else:
-    print(f"Total Market Entries: {len(market_df)}")
-    print("Warning: 'volume' column not found in market data.")
-
 #Separating out tags for their own table
-tag_list = extract_children(events_list, 'tags')
+tag_list = extract_children(event_list, 'tags')
 tag_df = pd.DataFrame(tag_list)
 
 #All of the tag data is stored in the parent tags table
@@ -85,7 +79,7 @@ tag_df = pd.DataFrame(tag_list)
 tag_df = tag_df[['id', 'event_id']]
 
 #Formatting the event data
-event_df = pd.DataFrame(events_list)
+event_df = pd.DataFrame(event_list)
 event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets', 'eventCreators'], errors='ignore')
 
 #%%
@@ -120,6 +114,8 @@ create_table(conn,
 upsert_data(conn, tag_df, tag_bridge_table_name, primary_keys=['event_id', 'id'])
 
 #Creating a view of all markets with the added tag
-create_tag_view(conn, tag_slug, tag_slug, market_table_name, tag_bridge_table_name, tag_table_name)
+for tag in tag_slug:
+    view_name = tag.replace('-', '_')
+    create_tag_view(conn, view_name, tag, market_table_name, tag_bridge_table_name, tag_table_name)
 
 print('Script Complete')

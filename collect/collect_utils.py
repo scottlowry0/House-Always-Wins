@@ -34,10 +34,14 @@ def get_columns(dataframe):
     return columns
 
 #==========================================================================
-#edit_table
+#create_table
 #A function for creating tables from dataframes that need to be linked
 #expects a db connection, dataframe, table name, and keys and relations
 #then creates a table
+#For primary keys, give a list of primary keys
+#For foreign keys give a list of tuples
+#for the tuples the first entry is the foreign key
+#and the second entry is the name of the parent table
 #==========================================================================
 def create_table(conn: sqlite3.Connection, 
                  dataframe: pd.DataFrame, 
@@ -100,15 +104,17 @@ def call_api(api: str, params: dict, **kwargs):
     while offset <= max_returns:
         try:
             response = requests.get(api, params=params)
+            response.raise_for_status()
             retry = 0
         
         except Exception as e:
                 print('Exception',e)
-                print(response.status_code)
-                print(response.text)
+                print(getattr(response, 'status_code', 'No status code')) 
+                print(getattr(response, 'text', 'No text'))
                 if retry < 3:
                     retry += 1
                     print('\nRetry',retry)
+                    continue
                 else:
                     print('\nMaximum retries exceeded')
                     sys.exit()
@@ -205,6 +211,7 @@ def upsert_data(conn: sqlite3.Connection,
 #get_event_ids_by_tag
 #A function for getting all conditionIDs from the markets table by a specific tag
 #Required Arguements: The plain text tag slug list (i.e ['politics', 'sports'])
+
 #==========================================================================            
 def get_event_ids_by_tags(conn: sqlite3.Connection, 
                               tag_slugs: list,
@@ -271,3 +278,23 @@ def merge_alternating_dicts(dict_list, num_groups=2):
         merged_results[i % num_groups].update(d)
         
     return merged_results
+
+
+#==========================================================================
+#create_market_transactions_view
+#Creates a view of all transactions associated with a specific market 
+#by joining the market table
+#==========================================================================
+def create_market_transactions_view(conn: sqlite3.Connection, 
+                                    view_name: str, 
+                                    transaction_table: str, 
+                                    condition_id: str, 
+                                    ):
+    
+    conn.execute(f"""
+         CREATE VIEW IF NOT EXISTS "{view_name}" AS
+         SELECT *
+         FROM {transaction_table}
+         WHERE conditionId = '{condition_id}'
+     """)
+    conn.commit()

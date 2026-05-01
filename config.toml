@@ -1,0 +1,45 @@
+#API endpoints
+event_api = 'https://gamma-api.polymarket.com/events'
+tag_api = 'https://gamma-api.polymarket.com/tags'
+transaction_api = 'https://data-api.polymarket.com/trades'
+holders_api = 'https://data-api.polymarket.com/holders'
+activity_api = 'https://data-api.polymarket.com/activity'
+positions_api = 'https://data-api.polymarket.com/v1/market-positions'
+
+#Names for DB
+db_name = 'polymarket_data.db'
+
+#only calls markets with the selected tag slug. Tag slugs are a text tag
+#using number tag ids will fail
+#This arguement expects a list.
+tag_slug = ['derivatives', 'pop-culture']
+
+#Determines if the calls return comments
+#This script has not been tested with comments
+#Put another way, if this is set to true it will probably not work
+include_chat = 'false'
+
+#=============
+#conditionIds
+#=============
+#used to determine what market you will get transactions from
+condition_id = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
+market_underlying = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
+
+#names for output tables
+[table_names]
+event_table_name = 'events'
+market_table_name = 'markets'
+tag_table_name = 'tags'
+tag_bridge_table_name = 'tag_event_bridge'
+transaction_table_name = 'transactions'
+
+
+#Determines if the script calls inactive and closed markets
+#true and false will call both
+[market_status]
+active = ['true', 'false']
+closed = ['true', 'false']
+
+
+

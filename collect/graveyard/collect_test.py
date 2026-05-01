@@ -1,0 +1,88 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Apr 21 07:15:51 2026
+
+@author: Scott Lowry
+"""
+
+#Imports
+import tomllib
+import pandas as pd
+import requests
+import sqlite3
+import sys
+from collect_utils import *
+import os
+
+#==========================================================================
+#CONFIG
+#==========================================================================
+config_file = 'collect_config.toml'
+
+with open(config_file,'rb') as fh:
+    config = tomllib.load(fh)    
+    api = config['event_api']
+    db_name = config['db_name']
+    tag_slug = config['tag_slug']
+    include_chat = config['include_chat']
+    event_table_name = config['table_names']['event_table_name']
+    market_table_name = config['table_names']['market_table_name']
+    tag_table_name = config['table_names']['tag_table_name']
+    tag_bridge_table_name = config['table_names']['tag_bridge_table_name']
+    active = config['market_status']['active']
+    closed = config['market_status']['closed']
+
+return_amount = 100
+offset = 0
+conn = sqlite3.connect(db_name)
+
+
+#%%
+#==========================================================================
+#Calling API
+#==========================================================================
+   
+params = {
+    'limit': return_amount,
+    'tag_slug': tag_slug,
+    'include_chat': include_chat,
+    'offset': offset,
+    #'active': active,
+    #'closed': closed
+}
+
+events_list = call_api(api, params)
+
+#%%
+#==========================================================================
+#Formatting data
+#==========================================================================
+
+#Separating out the markets for their own table
+market_list = extract_children(events_list, 'markets')
+market_df = pd.DataFrame(market_list)
+market_df = market_df.drop(columns=['outcomes', 'outcomePrices', 'clobTokenIds', 'umaResolutionStatuses', 'clobRewards', 'groupItemRange', 'feeSchedule'], errors='ignore')
+
+# --- NEW: Report entries and volume stats ---
+if 'volume' in market_df.columns:
+    # Ensure volume is numeric so sum() and mean() work properly
+    market_df['volume'] = pd.to_numeric(market_df['volume'], errors='coerce')
+    
+    print(f"Total Market Entries: {len(market_df)}")
+    print(f"Sum of Market Volume: {market_df['volume'].sum():.2f}")
+    print(f"Mean Market Volume: {market_df['volume'].mean():.2f}")
+else:
+    print(f"Total Market Entries: {len(market_df)}")
+    print("Warning: 'volume' column not found in market data.")
+# --------------------------------------------
+
+#Separating out tags for their own table
+tag_list = extract_children(events_list, 'tags')
+tag_df = pd.DataFrame(tag_list)
+#All of the tag data is stored in the parent tags table
+#Dropping everything else since the bridge just needs the relations
+tag_df = tag_df[['id', 'event_id']]
+
+#Formatting the event data
+event_df = pd.DataFrame(events_list)
+event_df = event_df.drop(columns=['eventMetadata', 'tags', 'series', 'markets', 'eventCreators'], errors='ignore')
