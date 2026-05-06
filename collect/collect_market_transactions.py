@@ -2,6 +2,13 @@
 """
 Created on Sun Apr 26 17:51:37 2026
 
+A script that collects all users who traded in a market and then collects
+All of their transactions in that market
+
+In its current iteration, this script only works on smaller markets with
+a limited number of users. Using this on a larger market will use all of
+your RAM and probably will fail after a few hours.
+
 @author: Scott Lowry
 """
 
@@ -10,8 +17,7 @@ Created on Sun Apr 26 17:51:37 2026
 import tomllib
 import pandas as pd
 from collect_utils import *
-from plot_utils import *
-import sys
+import os
 
 
 #==========================================================================
@@ -27,36 +33,20 @@ with open(config_file,'rb') as fh:
     activity_api = config['activity_api']
     transaction_table_name = config['table_names']['transaction_table_name']
     market_table_name = config['table_names']['transaction_table_name']
-    condition_id = config['condition_id']
+    condition_id = config['market_to_collect']
+    db_name = config['db_name']
     
 db_path = os.path.join(repo_root, db_name)
 return_amount = 100
 offset = 0
 conn = sqlite3.connect(db_path)
-#condition_id = '0xc1588218a290e61ef35545553b157f76702cc3c61f7f1d309a9c68a49cbc29fd'
-#underlying_condition = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
-
-#==========================================================================
-#CALLING API FOR ALL HOLDERS
-#==========================================================================
-#%%
-params = {
-        'market': condition_id,
-        'status': 'ALL',
-        'sortBy': 'TOTAL_PNL',
-        'offset': 0,
-        'limit': 500,
-        }
-
-positions_list = call_api(positions_api, params)
-
+positions_df = pd.read_pickle('holders.pkl')
 
 #==========================================================================
 #CALLING API FOR TRANSACTION DATA
 #==========================================================================
 #%%
-position_not_nested = extract_children(positions_list, 'positions')
-positions_df = pd.DataFrame(position_not_nested)
+
 transactions_list = []
 for index in positions_df.index: 
     params = {

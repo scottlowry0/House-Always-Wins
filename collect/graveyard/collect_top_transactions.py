@@ -28,10 +28,11 @@ with open(config_file,'rb') as fh:
     config = tomllib.load(fh)    
     activity_api = config['activity_api']
     markets = [config['market_underlying'], config['market_derivative']]
+    db_name = config['db_name']
     
 return_amount = 100
 offset = 0
-top_holders = pd.read_pickle('top_holders.pkl')
+top_holders = 
 
 #==========================================================================
 #CALLING API

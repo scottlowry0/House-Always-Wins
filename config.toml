@@ -12,18 +12,26 @@ db_name = 'polymarket_data.db'
 #only calls markets with the selected tag slug. Tag slugs are a text tag
 #using number tag ids will fail
 #This arguement expects a list.
-tag_slug = ['derivatives', 'pop-culture']
+tag_slug = ['derivatives', 'pop-culture', 'syracuse']
 
 #Determines if the calls return comments
 #This script has not been tested with comments
 #Put another way, if this is set to true it will probably not work
 include_chat = 'false'
 
+#used to dertermine if transactions are only collected for users in both markets
+#needs to be a boolean
+in_both = true
+
 #=============
 #conditionIds
 #=============
 #used to determine what market you will get transactions from
-condition_id = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
+#market_to_collect is used by collect_transactions to determine which market it will be collecting from
+#derivative market is the condition id for the derivative market and market underlying is for the
+#market backing the derivative asset 
+market_to_collect = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
+derivative_market = '0xc1588218a290e61ef35545553b157f76702cc3c61f7f1d309a9c68a49cbc29fd'
 market_underlying = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
 
 #names for output tables
