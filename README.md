@@ -60,7 +60,7 @@ Additionally, some users are shown as having no shares in the derivative market 
 
 The below graph shows the position history for the User ImJustKen in the week leading up to the resolution of the derivative market.
 
-![ImJustKen Graph](analyze\User_ImJustKen_yes_comparison.png)
+![ImJustKen Graph](analyze/User_ImJustKen_yes_comparison.png)
 
 ImJustKen is unique because rather than trying to simply manipulate the underlying asset price for the resolution data, he instead buys large amounts of the underlying assets to raise the value of his derivative positions before selling. He is shown on this graph doing this on both 2/11 and 2/16.
 
