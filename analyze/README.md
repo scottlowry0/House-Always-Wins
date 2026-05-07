@@ -1,0 +1,2 @@
+# Analyze Module
+This module is designed to analyze the data produced in the collect module and contains two scripts. The first script, analyze_overview, cleans the data and produces four pickle files, one for each outcome in both markets. It also produce some values such as volume and the number of user in the derivative market participating in the underlying market. The second script, analyze_users, creates a collection of useful graphs for showing how certain users enter and exit the market.
