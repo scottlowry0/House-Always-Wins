@@ -4,7 +4,7 @@ Created on Sun Apr 12 13:09:01 2026
 
 @author: Scott Lowry
 
-A first draft script for using the polymarket API to build a table of events
+A script for using the polymarket API to build a table of events
 
 """
 

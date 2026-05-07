@@ -34,6 +34,13 @@ market_to_collect = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928
 derivative_market = '0xc1588218a290e61ef35545553b157f76702cc3c61f7f1d309a9c68a49cbc29fd'
 market_underlying = '0x0b4cc3b739e1dfe5d73274740e7308b6fb389c5af040c3a174923d928d134bee'
 
+#Names for views to be analyzed
+underlying_view_name = 'will_jesus_christ_return_before_2027'
+derivative_view_name = 'jesus_christ_return_before_2027_odds_5_monday_night_12_1_am'
+
+#Pickle file for holders name
+holders_pickle_name = 'holders.pkl'
+
 #names for output tables
 [table_names]
 event_table_name = 'events'

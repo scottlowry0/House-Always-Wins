@@ -26,6 +26,7 @@ with open(config_file,'rb') as fh:
     activity_api = config['activity_api']
     condition_id = config['derivative_market']
     underlying_condition = config['market_underlying']
+    holders_pickle_name = config['holders_pickle_name']
 
 return_amount = 100
 offset = 0
@@ -47,4 +48,4 @@ positions_list = call_api(positions_api, params)
 #==========================================================================
 position_not_nested = extract_children(positions_list, 'positions')
 positions_df = pd.DataFrame(position_not_nested)
-pd.to_pickle(positions_df, 'holders.pkl')
+pd.to_pickle(positions_df, os.path.join(repo_root, holders_pickle_name))

@@ -1,2 +1,5 @@
 *.sqlite3
 *.db
+*.pickle
+*.pkl
+*.csv

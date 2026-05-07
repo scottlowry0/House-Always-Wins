@@ -35,12 +35,13 @@ with open(config_file,'rb') as fh:
     market_table_name = config['table_names']['transaction_table_name']
     condition_id = config['market_to_collect']
     db_name = config['db_name']
+    holders_pickle_name = config['holders_pickle_name']
     
 db_path = os.path.join(repo_root, db_name)
 return_amount = 100
 offset = 0
 conn = sqlite3.connect(db_path)
-positions_df = pd.read_pickle('holders.pkl')
+positions_df = pd.read_pickle(os.path.join(repo_root, holders_pickle_name))
 
 #==========================================================================
 #CALLING API FOR TRANSACTION DATA
@@ -54,7 +55,6 @@ for index in positions_df.index:
             'market': condition_id,
             'offset': 0,
             'limit': 100,
-            'type': 'TRADE'
             }
     
     loop_number = 0
@@ -91,18 +91,28 @@ for index in positions_df.index:
 #%%
 transactions_df = pd.DataFrame(transactions_list)
 
+
+#Count rows that are identical 
+exact_duplicates = transactions_df.duplicated().sum()
+print(f"Exact row duplicates in DataFrame: {exact_duplicates}")
+
+#Count rows that share our composite primary key, but might have different sizes/prices
+pk_cols = ['transactionHash', 'proxyWallet', 'type', 'side', 'size', 'usdcSize']
+key_collisions = transactions_df.duplicated(subset=pk_cols).sum()
+print(f"Primary Key collisions in DataFrame: {key_collisions}")
+
 #creates the transaction table if it does not yet exist
 create_table(conn, 
              transactions_df, 
              transaction_table_name, 
-             ['transactionHash'],
+             ['transactionHash', 'proxyWallet', 'type', 'side', 'size', 'usdcSize'],
              [('conditionId', market_table_name)])
 
 #upserts the data into the transactions table
 upsert_data(conn,
             transactions_df, 
             transaction_table_name, 
-            ['transactionHash'])
+            ['transactionHash', 'proxyWallet', 'type', 'side', 'size', 'usdcSize'])
 
 #Making a view of transactions for the market
 view_name = transactions_df['slug'].iloc[0]
